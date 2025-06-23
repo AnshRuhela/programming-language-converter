@@ -1,9 +1,11 @@
-
 import re
 
 def translate_line(line, indent, in_function, func_name, return_types, local_vars):
     line = line.rstrip()
     stripped = line.strip()
+    
+    # Replace Python logical operators with C equivalents
+    stripped = stripped.replace(" and ", " && ").replace(" or ", " || ")
     
     # Handle comments
     if stripped.startswith("#"):
@@ -72,8 +74,7 @@ def translate_line(line, indent, in_function, func_name, return_types, local_var
     
     # Handle increment/decrement operators (x += 1, x -= 1 )
     if re.match(r"^\w+\s*(\+\=|\-\=)\s*1$", stripped):
-   
-        return "    " * indent +f"{stripped};"
+        return "    " * indent + f"{stripped};"
         
     # Integer input
     if re.match(r"^\w+\s*=\s*int\s*\(\s*input\s*\(['\"].*['\"]\)\s*\)$", stripped):
@@ -162,6 +163,28 @@ def translate_line(line, indent, in_function, func_name, return_types, local_var
         local_vars[var] = "char*"
         return "    " * indent + f"char {var}[100] = {val.strip()};"
 
+    # List assignment (e.g., arr = [1, 2, 3, 4] or arr = [1.0, 2.0])
+    if re.match(r"^\w+\s*=\s*\[.*\]$", stripped):
+        var, val = stripped.split("=")
+        var = var.strip()
+        val = val.strip()[1:-1]  # Remove [ and ]
+        elements = [e.strip() for e in val.split(",") if e.strip()]
+        if not elements:
+            local_vars[var] = "int[]"
+            return "    " * indent + f"int {var}[] = {{}};"
+        # Determine type based on first element
+        first_element = elements[0]
+        if re.match(r"^\d+\.\d+$", first_element):
+            type_name = "float"
+        elif re.match(r"^\d+$", first_element):
+            type_name = "int"
+        elif re.match(r"^['\"].*['\"]$", first_element):
+            type_name = "char*"
+        else:
+            type_name = "int"  # Default fallback
+        local_vars[var] = f"{type_name}[]"
+        return "    " * indent + f"{type_name} {var}[] = {{{val}}};"
+
     # For loop
     if stripped.startswith("for") and "range" in stripped:
         var = re.search(r"for\s+(\w+)\s+in", stripped).group(1)
@@ -179,11 +202,13 @@ def translate_line(line, indent, in_function, func_name, return_types, local_var
     # If statement
     if stripped.startswith("if"):
         condition = stripped[2:].strip().rstrip(":")
+        condition = condition.replace(" and ", " && ").replace(" or ", " || ")
         return "    " * indent + f"if ({condition}) {{"
 
     # Elif statement
     if stripped.startswith("elif"):
         condition = stripped[4:].strip().rstrip(":")
+        condition = condition.replace(" and ", " && ").replace(" or ", " || ")
         return "    " * indent + f"else if ({condition}) {{"
 
     # Else statement
@@ -193,15 +218,28 @@ def translate_line(line, indent, in_function, func_name, return_types, local_var
     # While loop
     if stripped.startswith("while"):
         condition = stripped[5:].strip().rstrip(":")
+        condition = condition.replace(" and ", " && ").replace(" or ", " || ")
         return "    " * indent + f"while ({condition}) {{"
+
+    # Handle math.something function calls
+    if re.match(r"^math\.\w+\s*\(.*\)$", stripped):
+        func_call = re.sub(r"^math\.", "", stripped)  # Remove math. prefix
+        return "    " * indent + f"{func_call};"
 
     # Function call detection
     if re.match(r"^\w+\s*\(.*\)$", stripped) and not stripped.startswith(("def ", "print(", "int(", "float(", "input(")):
         return "    " * indent + f"{stripped};"
 
-    # General assignment (e.g., res = a + b)
+    # General assignment (e.g., res = a + b or res = math.something(x))
     if re.match(r"^\w+\s*=\s*.+$", stripped):
         var, expr = map(str.strip, stripped.split("=", 1))
+        expr = expr.replace(" and ", " && ").replace(" or ", " || ")
+
+        # Handle math.something in assignments
+        if re.match(r"^math\.\w+\s*\(.*\)$", expr):
+            func_call = re.sub(r"^math\.", "", expr)  # Remove math. prefix
+            local_vars[var] = "int"  # Default to int for math functions
+            return "    " * indent + f"int {var} = {func_call};"
 
         # Infer type from expression
         inferred_type = "int"  # default
@@ -229,16 +267,32 @@ def translate_line(line, indent, in_function, func_name, return_types, local_var
     # Fallback
     return "    " * indent + "// " + stripped
 
-
 def convert_file(input_file, output_file):
     with open(input_file, "r") as f:
         lines = f.readlines()
 
+    # Initialize output with standard C includes
     output = [
         "#include <stdio.h>",
         "#include <string.h>",
-        ""
     ]
+
+    # Dictionary to map Python libraries to C includes
+    library_map = {
+        "math": "#include <math.h>",
+    }
+
+    # Process imports and add corresponding C includes
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("import"):
+            lib_name = stripped.split()[1]
+            if lib_name in library_map:
+                output.append(library_map[lib_name])
+            continue
+        break  # Stop processing imports after the first non-import line
+
+    output.append("")  # Add a blank line after includes
 
     func_code = []
     main_code = ["int main() {"]
@@ -357,7 +411,6 @@ def convert_file(input_file, output_file):
         f.write("\n".join(output))
 
     print(f"✅ Converted to {output_file}")
-
 
 if __name__ == "__main__":
     convert_file("input.py", "output.c")
