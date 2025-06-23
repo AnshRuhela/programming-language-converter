@@ -1,5 +1,3 @@
-import math
-
 def func():
     print("helo")
 
@@ -29,10 +27,6 @@ rr = 3
 nn = float(input("enter number: "))
 print(nn)
 
-x = 0
-while x < 3:
-    print(x)
-    x += 1
 
 if 4:
     print("two")
@@ -58,6 +52,3 @@ for i in range(43): # this is comm
 
 func2()
 func3()
-math.ceil(3.4)
-math.floor(44.4)
-math.pow(3, 4)

@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <cmath>
 using namespace std;
 
 void func() {
@@ -39,11 +38,6 @@ float nn;
 cout << "enter number: ";
 cin >> nn;
 cout << nn << endl;
-int x = 0;
-while (x < 3) {
-    cout << x << endl;
-    // x += 1
-}
 if (4) {
     cout << "two" << endl;
 }
@@ -74,8 +68,5 @@ for (int i = 0; i < 43; i++) {
 }
 func2();
 func3();
-ceil(3.4);
-floor(44.4);
-pow(3, 4);
     return 0;
 }

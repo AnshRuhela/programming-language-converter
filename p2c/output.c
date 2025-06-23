@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 void func() {
     printf("helo");
@@ -36,11 +37,6 @@ float nn;
 printf("enter number: ");
 scanf("%f", &nn);
 printf("%f\n", nn);
-int x = 0;
-while (x < 3) {
-    printf("%d\n", x);
-    // x += 1
-}
 if (4) {
     printf("two");
 }
@@ -71,8 +67,5 @@ for (int i = 0; i < 43; i += 1) {
 }
 func2();
 func3();
-// math.ceil(3.4)
-// math.floor(44.4)
-// math.pow(3, 4)
     return 0;
 }

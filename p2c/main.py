@@ -1,34 +1,49 @@
+
 import re
+
 def translate_line(line, indent, in_function, func_name, return_types, local_vars):
     line = line.rstrip()
     stripped = line.strip()
     
-    #comments
+    # Handle comments
     if stripped.startswith("#"):
         return "    " * indent + "// " + stripped[1:].strip()
     
-    #functions
-
+    # Handle function definitions
     if stripped.startswith("def "):
         func_def = stripped[4:].rstrip(":")
-        name, args = func_def.split("(")
-        args = args.rstrip(")")
-        arg_list = [arg.strip() for arg in args.split(",") if arg]
+        name_part = func_def.split("(")[0].strip()
+        args_part = func_def.split("(")[1].split(")")[0].strip()
+        arg_list = [arg.strip() for arg in args_part.split(",") if arg]
         c_args = []
         for arg in arg_list:
-            c_args.append(f"int {arg}")
-            local_vars[arg] = "int"  # default assumption, updated later via function calls
+            # Handle typed parameters (x: int)
+            if ":" in arg:
+                arg_name, arg_type = map(str.strip, arg.split(":"))
+                if arg_type == "int":
+                    c_args.append(f"int {arg_name}")
+                    local_vars[arg_name] = "int"
+                elif arg_type == "float":
+                    c_args.append(f"float {arg_name}")
+                    local_vars[arg_name] = "float"
+                elif arg_type == "str":
+                    c_args.append(f"char* {arg_name}")
+                    local_vars[arg_name] = "char*"
+                else:
+                    c_args.append(f"int {arg_name}")  # default
+                    local_vars[arg_name] = "int"
+            else:
+                c_args.append(f"int {arg}")  # default to int
+                local_vars[arg] = "int"
         return {
             "type": "function",
-            "name": name,
+            "name": name_part,
             "args": c_args,
             "indent": indent,
-            "line": "    " * indent + f"_RETURN_TYPE_ {name}({', '.join(c_args)}) {{"
+            "line": "    " * indent + f"_RETURN_TYPE_ {name_part}({', '.join(c_args)}) {{"
         }
     
-    
-    #return
-
+    # Handle return statements
     if stripped.startswith("return "):
         expr = stripped[7:].strip()
         inferred_type = "void"
@@ -51,9 +66,15 @@ def translate_line(line, indent, in_function, func_name, return_types, local_var
             elif "char*" in types:
                 inferred_type = "char*"
 
-        return_types[func_name].add(inferred_type)
+        if func_name:  # Only track return types for functions
+            return_types[func_name].add(inferred_type)
         return "    " * indent + f"return {expr};"
-
+    
+    # Handle increment/decrement operators (x += 1, x -= 1 )
+    if re.match(r"^\w+\s*(\+\=|\-\=)\s*1$", stripped):
+   
+        return "    " * indent +f"{stripped};"
+        
     # Integer input
     if re.match(r"^\w+\s*=\s*int\s*\(\s*input\s*\(['\"].*['\"]\)\s*\)$", stripped):
         var, input_call = stripped.split("=")
@@ -119,9 +140,6 @@ def translate_line(line, indent, in_function, func_name, return_types, local_var
             return "    " * indent + f'printf("{fmt}\\n", {content});'
 
         return "    " * indent + f'printf("%d\\n", {content});'
-
-
-
 
     # Float assignment
     if re.match(r"^\w+\s*=\s*\d*\.\d+$", stripped):
@@ -208,7 +226,6 @@ def translate_line(line, indent, in_function, func_name, return_types, local_var
         local_vars[var] = inferred_type
         return "    " * indent + f"{inferred_type} {var} = {expr};"
 
-
     # Fallback
     return "    " * indent + "// " + stripped
 
@@ -219,8 +236,9 @@ def convert_file(input_file, output_file):
 
     output = [
         "#include <stdio.h>",
+        "#include <string.h>",
+        ""
     ]
-    output.append("")
 
     func_code = []
     main_code = ["int main() {"]
@@ -252,7 +270,9 @@ def convert_file(input_file, output_file):
                 return_type = "void"
                 if curr_func_name in return_types:
                     types = return_types[curr_func_name]
-                    if "float" in types:
+                    if len(types) == 1:
+                        return_type = types.pop()
+                    elif "float" in types:
                         return_type = "float"
                     elif "int" in types:
                         return_type = "int"
@@ -300,7 +320,9 @@ def convert_file(input_file, output_file):
         return_type = "void"
         if curr_func_name in return_types:
             types = return_types[curr_func_name]
-            if "float" in types:
+            if len(types) == 1:
+                return_type = types.pop()
+            elif "float" in types:
                 return_type = "float"
             elif "int" in types:
                 return_type = "int"

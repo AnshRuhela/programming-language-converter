@@ -13,7 +13,7 @@ def translate_line(line, indent, in_function, func_name, return_types):
         func_def = stripped[4:].rstrip(":")
         name, args = func_def.split("(")
         args = args.rstrip(")")
-        cpp_args = [f"string {arg.strip()}" for arg in args.split(",") if arg]
+        cpp_args = [f"int {arg.strip()}" for arg in args.split(",") if arg]
         return {
             "type": "function",
             "name": name,
@@ -89,6 +89,35 @@ def translate_line(line, indent, in_function, func_name, return_types):
         var, val = stripped.split("=")
         return "    " * indent + f"string {var.strip()} = {val.strip()};"
 
+    # List assignment (e.g., arr = [1, 2, 3] or arr = ["a", "b"])
+    if re.match(r"^\w+\s*=\s*\[.*\]$", stripped):
+        var, val = stripped.split("=")
+        var = var.strip()
+        val = val.strip()[1:-1]  # Remove [ and ]
+        elements = [e.strip() for e in val.split(",") if e.strip()]
+        if not elements:
+            return "    " * indent + f"vector<int> {var};"  # Default to int for empty vector
+        # Determine type based on first element
+        if re.match(r"^\d+\.\d+$", elements[0]):
+            type_name = "float"
+        elif re.match(r"^\d+$", elements[0]):
+            type_name = "int"
+        elif re.match(r"^['\"].*['\"]$", elements[0]):
+            type_name = "string"
+        else:
+            type_name = "int"  # Default fallback
+        return "    " * indent + f"vector<{type_name}> {var} {{{val}}};"
+
+    # Min function call (e.g., min(a, b) -> std::min(a, b))
+    if re.match(r"^min\s*\(\s*\w+\s*,\s*\w+\s*\)$", stripped):
+        args = stripped[4:-1].strip()  # Extract content inside min()
+        return "    " * indent + f"std::min({args});"
+
+    # Max function call (e.g., max(a, b) -> std::max(a, b))
+    if re.match(r"^max\s*\(\s*\w+\s*,\s*\w+\s*\)$", stripped):
+        args = stripped[4:-1].strip()  # Extract content inside max()
+        return "    " * indent + f"std::max({args});"
+
     # For loop
     if stripped.startswith("for") and "range" in stripped:
         var = re.search(r"for\s+(\w+)\s+in", stripped).group(1)
@@ -142,8 +171,14 @@ def convert_file(input_file, output_file):
     ]
     # Check for math functions or import math
     has_math = any(line.strip().startswith("import math") or re.match(r"^\s*math\.\w+\s*\(.*\)$", line.strip()) for line in lines)
+    has_vector = any(re.match(r"^\s*\w+\s*=\s*\[.*\]$", line.strip()) for line in lines)
+    has_algorithm = any(re.match(r"^\s*min\s*\(\s*\w+\s*,\s*\w+\s*\)$", line.strip()) or re.match(r"^\s*max\s*\(\s*\w+\s*,\s*\w+\s*\)$", line.strip()) for line in lines)
     if has_math:
         output.append("#include <cmath>")
+    if has_vector:
+        output.append("#include <vector>")
+    if has_algorithm:
+        output.append("#include <algorithm>")
     output.append("using namespace std;")
     output.append("")
 
@@ -265,3 +300,4 @@ def convert_file(input_file, output_file):
 
 if __name__ == "__main__":
     convert_file("input.py", "output.cpp")
+    
