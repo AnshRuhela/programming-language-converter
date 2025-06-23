@@ -1,8 +1,24 @@
 #include <iostream>
 #include <string>
+#include <cmath>
+#include <vector>
 using namespace std;
 
-void func() {
+int fact(int n) {
+    if (n == 0) {
+        return 1;
+    }
+    return n * fact(n - 1);
+}
+int factorial(int n) {
+    if (n == 0 or n == 1) {
+        return 1;
+    }
+    else {
+        return n * factorial(n - 1);
+}
+}
+void func(int a, int b, int c) {
     cout << "helo" << endl;
 }
 void func2() {
@@ -38,8 +54,13 @@ float nn;
 cout << "enter number: ";
 cin >> nn;
 cout << nn << endl;
+int x = 0;
+while (x < 3) {
+    cout << x << endl;
+    // x += 1
+}
 if (4) {
-    cout << "two" << endl;
+    cout << "two ram ram ram ram" << endl;
 }
 for (int i = 0; i < 30; i++) {
     cout << "tone" << endl;
@@ -68,5 +89,14 @@ for (int i = 0; i < 43; i++) {
 }
 func2();
 func3();
+ceil(3.4);
+floor(44.4);
+pow(3, 4);
+int RAM = 0;
+RAM=fact(4);
+vector<int> arr {1, 2, 3, 4, 5};
+vector<string> arr2 {"df"};
+vector<float> arr3 {3.4,5.4};
+x=min(9,45);
     return 0;
 }

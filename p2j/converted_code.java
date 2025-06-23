@@ -8,6 +8,23 @@ name
 args
 indent
 line
+    if (n == 0) {
+        return 1;
+    return n * fact(n - 1);
+type
+name
+args
+indent
+line
+    if (n == 0 or n == 1) {
+        return 1;
+    // else:
+        return n * factorial(n - 1);
+type
+name
+args
+indent
+line
     System.out.println("helo");
 type
 name
@@ -47,8 +64,12 @@ float nn;
 System.out.print("enter number: ");
 nn = scanner.nextFloat();
 System.out.println(nn);
+int x = 0;
+while (x < 3) {
+    System.out.println(x);
+    // x += 1
 if (4) {
-    System.out.println("two");
+    System.out.println("two ram ram ram ram");
 for (int i = 0; i < 30; i++) {
     System.out.println("tone");
 for (int i = 0; i < 43; i++) {
@@ -67,7 +88,17 @@ for (int i = 0; i < 43; i++) {
         System.out.println("dfdgj");
 // func2()
 // func3()
+// math.ceil(3.4)
+// math.floor(44.4)
+// math.pow(3, 4)
+int RAM = 0;
+RAM=fact(4);
+arr = [1, 2, 3, 4, 5];
+arr2=["df"];
+arr3=[3.4,5.4];
+x=min(9,45);
     }
 
+// import math
     }
 }

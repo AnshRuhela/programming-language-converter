@@ -1,71 +1,43 @@
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
-void func() {
-    printf("helo");
+int sum(int a, int b) {
+    return a+b;
 }
-void func2() {
-    for (int i = 0; i < 30; i += 1) {
-        printf("hl");
-}
-}
-void func3() {
-    printf("hlo");
-    for (int i = 0; i < 300; i += 1) {
-        printf("hl");
+int fact(int n) {
+    if (n == 0) {
+        return 1;
     }
-    printf("4");
+    return n * fact(n - 1);
 }
-int func4() {
-    printf("this is fun");
-    return 1;
+int factorial(int n) {
+    if (n == 0 || n == 1) {
+        return 1;
+    }
+    else {
+        return n * factorial(n - 1);
+}
 }
 
 int main() {
-printf("hlo");
-char name[100];
-printf("enter name: ");
-scanf("%s", name);
-int age;
-printf("enter age: ");
-scanf("%d", &age);
-int a = 30;
-int b = 30;
-float cc = 3.4;
-int rr = 3;
-float nn;
-printf("enter number: ");
-scanf("%f", &nn);
-printf("%f\n", nn);
-if (4) {
-    printf("two");
-}
-for (int i = 0; i < 30; i += 1) {
-    printf("tone");
-}
-for (int i = 0; i < 43; i += 1) {
-    if (3) {
-        printf("hle");
-    }
-    else if (34) {
-        printf("ee");
-        for (int j = 0; j < 30; j += 1) {
-            printf('d');
-}
-}
-}
-for (int i = 0; i < 43; i += 1) {
-    if (3) {
-        printf("hle");
-    }
-    else if (34) {
-        printf("ee");
-    }
-    else {
-        printf("dfdgj");
-}
-}
-func2();
-func3();
+int num1;
+printf("enter num");
+scanf("%d", &num1);
+int num2;
+printf("enter num:");
+scanf("%d", &num2);
+int sum1 = sum(num1,num2);
+printf("%d\n", sum1);
+sqrt(40);
+int d = ceil(34);
+floor(34);
+min(4,3);
+int arr[] = {1,2,3,4};
+float le[] = {1.2,3.4};
+char* huur[] = {"34","44"};
+char* rr[] = {"d"};
+// Example usage
+printf("%d\n", factorial(5));
     return 0;
 }

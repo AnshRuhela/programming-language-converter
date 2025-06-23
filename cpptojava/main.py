@@ -9,27 +9,26 @@ def translate_cpp_to_java(lines):
 
     indent = "    "
     var_types = {}
-    func_lines = []     # To store function definitions
-    main_lines = []     # To store main method lines
+    func_lines = []
+    main_lines = []
 
     in_function = False
     function_buffer = []
     brace_count = 0
-    current_func_signature = ""
 
     for line in lines:
         stripped = line.strip()
 
-        # Skip includes and using namespace
+        if not stripped or stripped.startswith("//"):
+            continue
+
         if "#include" in stripped or "using namespace std;" in stripped:
             continue
 
-        # Detect function signature (not main)
-        func_match = re.match(r"(int|float|double|string|void)\s+(\w+)\s*\(([^)]*)\)\s*{?", stripped)
+        func_match = re.match(r"(int|float|double|string|void)\s+(\w+)\s*\((.*)\)\s*{?", stripped)
         if func_match and not re.match(r"int\s+main\s*\(\s*(void)?\s*\)", stripped):
             in_function = True
             brace_count = 0
-            current_func_signature = stripped
             function_buffer.append(stripped)
             if '{' in stripped:
                 brace_count += 1
@@ -40,28 +39,30 @@ def translate_cpp_to_java(lines):
             brace_count += stripped.count('{')
             brace_count -= stripped.count('}')
             if brace_count == 0:
-                # End of function
                 java_func_lines = convert_function(function_buffer)
                 func_lines.extend(java_func_lines)
                 function_buffer = []
                 in_function = False
             continue
 
-        # Handle main function start
         if re.match(r"int\s+main\s*\(\s*(void)?\s*\)", stripped):
             main_lines.append(f"{indent}public static void main(String[] args) "+"{")
             main_lines.append(f"{indent*2}Scanner sc = new Scanner(System.in);")
             continue
 
-        # Handle main function end
         if stripped == "return 0;" or stripped == "return 0":
-            # Close main method
             main_lines.append(f"{indent}}}")
             continue
 
-        # Inside main body - parse other lines
         if main_lines:
-            # Multiple variable declarations (e.g. int x, y;)
+            if match := re.match(r"(int|float|double|string)\s+(\w+)\[(\d+)?\];", stripped):
+                t, name, size = match.groups()
+                t_java = "String" if t == "string" else t
+                size_val = size if size else "100"
+                main_lines.append(f"{indent*2}{t_java}[] {name} = new {t_java}[{size_val}];")
+                var_types[name] = f"{t_java}[]"
+                continue
+
             if match := re.match(r"(int|float|double|string)\s+([\w\s,]+);", stripped):
                 t = match.group(1)
                 vars_str = match.group(2)
@@ -72,7 +73,6 @@ def translate_cpp_to_java(lines):
                 main_lines.append(f"{indent*2}{t_java} {vars_joined};")
                 continue
 
-            # Variable initialization (single var)
             if match := re.match(r"(int|float|double|string)\s+(\w+)\s*=\s*(.*);", stripped):
                 t, var, val = match.groups()
                 t_java = "String" if t == "string" else t
@@ -80,21 +80,19 @@ def translate_cpp_to_java(lines):
                 main_lines.append(f"{indent*2}{t_java} {var} = {val};")
                 continue
 
-            # cin >>
             if "cin >>" in stripped:
                 vars_ = [v.strip().replace(";", "") for v in stripped.split(">>")[1:]]
                 for v in vars_:
-                    t = var_types.get(v, "String")
+                    base_type = var_types.get(v, "String").replace("[]", "")
                     read_method = {
                         "int": "nextInt()",
                         "float": "nextFloat()",
                         "double": "nextDouble()",
                         "String": "next()"
-                    }.get(t, "next()")
+                    }.get(base_type, "next()")
                     main_lines.append(f"{indent*2}{v} = sc.{read_method};")
                 continue
 
-            # cout <<
             if "cout <<" in stripped:
                 content = stripped.split("<<")[1:]
                 parts = []
@@ -107,23 +105,20 @@ def translate_cpp_to_java(lines):
                 main_lines.append(f'{indent*2}System.out.print(' + " + ".join(parts) + ');')
                 continue
 
-            # return statements
             if stripped.startswith("return"):
-                main_lines.append(f"{indent*2}{stripped};")
+                if not stripped.endswith(";"):
+                    stripped += ";"
+                main_lines.append(f"{indent*2}{stripped}")
                 continue
 
-            # Blocks and conditionals
             if any(stripped.startswith(keyword) for keyword in ["if", "else if", "else", "for", "while"]):
-                # Convert conditions to Java style
-                cond_line = stripped
-                cond_line = cond_line.replace("&&", "&&").replace("||", "||")
-                main_lines.append(f"{indent*2}{cond_line}")
+                main_lines.append(f"{indent*2}{stripped}")
                 continue
+
             if stripped in ["{", "}"]:
                 main_lines.append(f"{indent*2}{stripped}")
                 continue
 
-            # Other lines fallback
             if stripped and not stripped.startswith("//"):
                 if stripped.endswith(";"):
                     main_lines.append(f"{indent*2}{stripped}")
@@ -132,48 +127,44 @@ def translate_cpp_to_java(lines):
             elif stripped:
                 main_lines.append(f"{indent*2}{stripped}")
 
-    # Close class after main and functions
     java_lines.extend(func_lines)
     java_lines.extend(main_lines)
-    java_lines.append("}")
+
+    if not (java_lines and java_lines[-1].strip() == "}"):
+        java_lines.append("}")
 
     return java_lines
 
 def convert_function(func_lines):
-    """Convert a C++ function to Java static method."""
     converted = []
     indent = "    "
 
     header = func_lines[0]
-    # Parse function signature
-    m = re.match(r"(int|float|double|string|void)\s+(\w+)\s*\(([^)]*)\)\s*{?", header)
+    m = re.match(r"(int|float|double|string|void)\s+(\w+)\s*\((.*)\)\s*{?", header)
     if not m:
         return ["// Could not parse function: " + header]
 
     ret_type, name, params = m.groups()
     ret_type_java = "String" if ret_type == "string" else ret_type
 
-    # Convert params
+    param_list = []
     params = params.strip()
     if params:
-        param_list = []
         for p in params.split(","):
             p = p.strip()
-            pt_match = re.match(r"(int|float|double|string)\s+(\w+)", p)
+            pt_match = re.match(r"(int|float|double|string)\s*(\[\])?\s+(\w+)", p)
             if pt_match:
-                pt, pv = pt_match.groups()
+                pt, is_array, pv = pt_match.groups()
                 pt_java = "String" if pt == "string" else pt
+                if is_array:
+                    pt_java += "[]"
                 param_list.append(f"{pt_java} {pv}")
             else:
-                param_list.append(p)  # fallback
-        params_java = ", ".join(param_list)
-    else:
-        params_java = ""
+                param_list.append(p)
+    params_java = ", ".join(param_list)
 
-    # Function header line
     converted.append(f"{indent}public static {ret_type_java} {name}({params_java}) "+"{")
 
-    # Convert function body lines (skip signature)
     for line in func_lines[1:]:
         stripped = line.strip()
         if stripped == "}":
@@ -192,7 +183,6 @@ def convert_function(func_lines):
     return converted
 
 def convert_file(input_file, output_file):
-    """Interface function expected by the GUI"""
     try:
         with open(input_file, "r") as f:
             cpp_lines = f.readlines()
@@ -208,5 +198,4 @@ def convert_file(input_file, output_file):
         return False
 
 if __name__ == "__main__":
-    # For standalone testing
-    convert_file("cpptojava\input.cpp", "cpptojava\output.java")
+    convert_file("cpptojava/input.cpp", "cpptojava/output.java")
