@@ -1,0 +1,159 @@
+#All testing code
+# Test comment
+def add_numbers(a, b):
+    result = a + b
+    return result
+
+def get_name():
+    return "Alice"
+
+def check_bool():
+    return True
+
+def get_list():
+    return ["item1", "item2"]
+
+
+x = 5
+y = 3.14
+name = "Test"
+flag = True
+items = ["apple", "banana"]
+count = 0
+count += 1
+
+n = int(input("Enter a number: "))
+f = float(input("Enter a float: "))
+s = input("Enter a string: ")
+
+print(f"Number: {n}, Float: {f}, String: {s}")
+print("Hello, World!")
+
+for i in range(5):
+    print(i)
+
+for j in range(2, 7, 2):
+    if j == 4:
+        print("Found 4")
+    elif j == 6:
+        print("Found 6")
+    else:
+        print("Other")
+
+while count < 3:
+    print(count)
+    count += 1
+    if count == 2:
+        continue
+    if count == 3:
+        break
+
+
+
+___________________________________________________
+
+
+
+
+
+
+
+Testing for Python to java code....
+
+def factorial(n):
+    if n < 0:
+        return 0
+    elif n == 0 or n == 1:
+        return 1
+    else:
+        fact = 1
+        for i in range(2, n + 1):
+            fact *= i
+        return fact
+
+num = int(input("Enter a number: "))
+
+result = factorial(num)
+print(f"Factorial of {num} is: {result}")
+
+
+_________________________________
+
+
+#NORMAL INPUT TESTING:
+
+# Integer input
+a = int(input("Enter first integer: "))
+b = int(input("Enter second integer: "))
+int_sum = a + b
+
+# Float input
+x = float(input("Enter first float: "))
+y = float(input("Enter second float: "))
+float_sum = x + y
+
+# String number input
+s1 = input("Enter first string number: ")
+s2 = input("Enter second string number: ")
+string_sum = s1 + s2  # Concatenation
+
+# Output
+print("\nResults:")
+print("Sum of integers:", int_sum)
+print("Sum of floats:", float_sum)
+print("Concatenated string numbers:", string_sum)
+
+
+_____________________________________________________
+
+
+
+#FOR LOOPING TESTING:
+# While Loop: Counting from 1 to 5
+print("Using WHILE loop (Counting 1 to 5):")
+i = 1
+while i <= 5:
+    print("Number:", i)
+    i += 1
+
+# For Loop: Printing square of numbers 1 to 5
+print("\nUsing FOR loop (Squares of 1 to 5):")
+for j in range(1, 6):
+    print("Square of j is:", j * j)
+
+_______________________________________
+
+#condition testing :
+
+# Input from user
+num = int(input("Enter a number: "))
+
+# == equal to
+if num == 0:
+    print("Number is zero (== 0)")
+
+# != not equal to
+elif num != 0:
+    print("Number is not zero (!= 0)")
+
+    # > greater than
+    if num > 0:
+        print("Number is positive (> 0)")
+
+        # >= greater than or equal to
+        if num >= 10:
+            print("Number is greater than or equal to 10 (>= 10)")
+        else:
+            print("Number is less than 10 but positive (< 10)")
+
+    # < less than
+    elif num < 0:
+        print("Number is negative (< 0)")
+
+        # <= less than or equal to
+        if num <= -10:
+            print("Number is less than or equal to -10 (<= -10)")
+        else:
+            print("Number is greater than -10 but still negative (> -10)")
+
+________________________________________-
